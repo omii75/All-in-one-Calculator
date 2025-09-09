@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>All‑in‑One Calculator</title>
+  <style>
+    :root {
+      --bg: #0f172a;          /* slate-900 */
+      --panel: #111827;       /* gray-900 */
+      --muted: #94a3b8;       /* slate-400 */
+      --text: #e5e7eb;        /* gray-200 */
+      --accent: #22d3ee;      /* cyan-400 */
+      --accent-2: #a78bfa;    /* violet-400 */
+      --danger: #ef4444;      /* red-500 */
+      --ok: #34d399;          /* emerald-400 */
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: radial-gradient(1200px 800px at 80% -10%, #1e293b 0%, var(--bg) 60%);
+      color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      min-height: 100vh; display: grid; place-items: center; padding: 24px;
+    }
+    .app {
+      width: 100%; max-width: 1100px; background: rgba(17,24,39,.8); backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,.06); border-radius: var(--radius); box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    header { padding: 18px 22px; display: flex; align-items: center; gap: 12px; justify-content: space-between; background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)); }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: .4px; }
+    .brand .logo { width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 6px 16px rgba(34,211,238,.35);
+      display: grid; place-items: center; font-weight: 900; color: #0b1020; }
+    .brand small { color: var(--muted); font-weight: 600; }
+
+    .tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; padding: 0 16px 16px; }
+    .tab-btn { background: #0b1220; border: 1px solid rgba(255,255,255,.06); color: var(--muted); padding: 10px 12px; border-radius: 12px; cursor: pointer; transition: transform .06s ease, background .2s;
+      font-weight: 700; letter-spacing: .2px; }
+    .tab-btn.active { background: linear-gradient(135deg, rgba(34,211,238,.15), rgba(167,139,250,.10)); color: #e6fbff; border-color: rgba(34,211,238,.35); }
+    .tab-btn:hover { transform: translateY(-1px); }
+
+    main { display: grid; gap: 16px; padding: 0 16px 16px 16px; }
+    .panel { background: #0b1220; border: 1px solid rgba(255,255,255,.06); border-radius: var(--radius); padding: 14px; }
+    .hidden { display: none !important; }
+
+    /* BASIC & SCIENTIFIC */
+    .display { background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)); border: 1px solid rgba(255,255,255,.06); border-radius: 14px; padding: 14px; text-align: right; box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
+      min-height: 86px; display: grid; align-content: space-between; }
+    .display .expr { font-size: 14px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .display .value { font-size: clamp(24px, 5vw, 44px); font-weight: 800; letter-spacing: .4px; }
+
+    .keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .key { background: #0a0f1c; border: 1px solid rgba(255,255,255,.06); border-radius: 14px; padding: 14px; text-align: center; cursor: pointer; user-select: none; font-weight: 800; letter-spacing: .3px; color: #cbd5e1;
+      transition: transform .05s ease, background .15s ease; }
+    .key:hover { background: #0f172a; }
+    .key:active { transform: translateY(2px) scale(.99); }
+    .key.op { color: #93c5fd; }
+    .key.equals { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #0b1020; border-color: transparent; }
+    .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+
+    /* Converters & Tools */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+    input, select, textarea { width: 100%; background: #0a0f1c; border: 1px solid rgba(255,255,255,.06); color: #e5e7eb; padding: 10px 12px; border-radius: 12px; outline: none; font-size: 14px; }
+    .inline { display: flex; gap: 10px; align-items: center; }
+
+    .tag { display: inline-block; padding: 6px 10px; border-radius: 999px; background: rgba(34,211,238,.12); color: #9be9f7; font-size: 12px; border: 1px solid rgba(34,211,238,.35); }
+    .danger { background: rgba(239,68,68,.12); color: #fecaca; border: 1px solid rgba(239,68,68,.35); }
+
+    footer { padding: 14px 22px 22px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; color: var(--muted); font-size: 12px; }
+    .kbd { background: #0a0f1c; border: 1px solid rgba(255,255,255,.12); border-bottom-width: 2px; border-radius: 6px; padding: 2px 6px; font-weight: 700; color: #cbd5e1; }
+
+    @media (max-width: 520px) {
+      .tabs { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo">∑</div>
+        <div>
+          <div>All‑in‑One Calculator</div>
+          <small>Basic • Scientific • Units • Programmer • Finance • Dates</small>
+        </div>
+      </div>
+      <div class="inline" title="Quick copy">
+        <button id="copyBtn" class="tab-btn">Copy Result</button>
+      </div>
+    </header>
+
+    <div class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="basic">Basic</button>
+      <button class="tab-btn" data-tab="sci">Scientific</button>
+      <button class="tab-btn" data-tab="units">Units</button>
+      <button class="tab-btn" data-tab="prog">Programmer</button>
+      <button class="tab-btn" data-tab="finance">Finance</button>
+      <button class="tab-btn" data-tab="date">Date</button>
+      <button class="tab-btn" data-tab="notes">Notes</button>
+      <button class="tab-btn" data-tab="history">History</button>
+    </div>
+
+    <main>
+      <!-- BASIC -->
+      <section id="tab-basic" class="panel">
+        <div class="display" id="basicDisplay">
+          <div class="expr" id="basicExpr">&nbsp;</div>
+          <div class="value" id="basicValue">0</div>
+        </div>
+        <div class="row">
+          <div class="key op" data-k="AC">AC</div>
+          <div class="key op" data-k="DEL">DEL</div>
+          <div class="key op" data-k="%">%</div>
+          <div class="key op" data-k="/">÷</div>
+        </div>
+        <div class="row">
+          <div class="key" data-k="7">7</div>
+          <div class="key" data-k="8">8</div>
+          <div class="key" data-k="9">9</div>
+          <div class="key op" data-k="*">×</div>
+        </div>
+        <div class="row">
+          <div class="key" data-k="4">4</div>
+          <div class="key" data-k="5">5</div>
+          <div class="key" data-k="6">6</div>
+          <div class="key op" data-k="-">−</div>
+        </div>
+        <div class="row">
+          <div class="key" data-k="1">1</div>
+          <div class="key" data-k="2">2</div>
+          <div class="key" data-k="3">3</div>
+          <div class="key op" data-k="+">+</div>
+        </div>
+        <div class="row">
+          <div class="key" data-k="0">0</div>
+          <div class="key" data-k=".">.</div>
+          <div class="key op" data-k="(">(</div>
+          <div class="key equals" data-k="=">=</div>
+        </div>
+      </section>
+
+      <!-- SCIENTIFIC -->
+      <section id="tab-sci" class="panel hidden">
+        <div class="display" id="sciDisplay">
+          <div class="expr" id="sciExpr">&nbsp;</div>
+          <div class="value" id="sciValue">0</div>
+        </div>
+        <div class="keypad">
+          <div class="key op" data-k="sin(">sin</div>
+          <div class="key op" data-k="cos(">cos</div>
+          <div class="key op" data-k="tan(">tan</div>
+          <div class="key op" data-k="^">x^y</div>
+
+          <div class="key op" data-k="log10(">log</div>
+          <div class="key op" data-k="ln(">ln</div>
+          <div class="key op" data-k="sqrt(">√</div>
+          <div class="key op" data-k="pi">π</div>
+
+          <div class="key op" data-k="e">e</div>
+          <div class="key op" data-k="!">n!</div>
+          <div class="key op" data-k="abs(">abs</div>
+          <div class="key op" data-k="," title="," style="opacity:.6">,</div>
+
+          <div class="key op" data-k="(">(</div>
+          <div class="key op" data-k=")">)</div>
+          <div class="key op" data-k="DEL">DEL</div>
+          <div class="key op" data-k="AC">AC</div>
+        </div>
+        <div class="row">
+          <div class="key" data-k="7">7</div>
+          <div class="key" data-k="8">8</div>
+          <div class="key" data-k="9">9</div>
+          <div class="key op" data-k="/">÷</div>
+        </div>
+        <div class="row">
+          <div class="key" data-k="4">4</div>
+          <div class="key" data-k="5">5</div>
+          <div class="key" data-k="6">6</div>
+          <div class="key op" data-k="*">×</div>
+        </div>
+        <div class="row">
+          <div class="key" data-k="1">1</div>
+          <div class="key" data-k="2">2</div>
+          <div class="key" data-k="3">3</div>
+          <div class="key op" data-k="-">−</div>
+        </div>
+        <div class="row">
+          <div class="key" data-k="0">0</div>
+          <div class="key" data-k=".">.</div>
+          <div class="key op" data-k="+">+</div>
+          <div class="key equals" data-k="=">=</div>
+        </div>
+        <div style="margin-top:10px; font-size:12px; color:var(--muted)">Angle mode: 
+          <button id="degBtn" class="tab-btn" style="padding:6px 10px">DEG</button>
+          <button id="radBtn" class="tab-btn" style="padding:6px 10px">RAD</button>
+          <span id="angleTag" class="tag">DEG</span>
+        </div>
+      </section>
+
+      <!-- UNITS -->
+      <section id="tab-units" class="panel hidden">
+        <div class="grid">
+          <div>
+            <label>Category</label>
+            <select id="unitCategory">
+              <option value="length">Length</option>
+              <option value="weight">Weight</option>
+              <option value="temp">Temperature</option>
+              <option value="area">Area</option>
+              <option value="volume">Volume</option>
+              <option value="speed">Speed</option>
+            </select>
+          </div>
+          <div>
+            <label>From</label>
+            <select id="unitFrom"></select>
+          </div>
+          <div>
+            <label>To</label>
+            <select id="unitTo"></select>
+          </div>
+          <div>
+            <label>Value</label>
+            <input id="unitInput" type="number" placeholder="Enter value" />
+          </div>
+          <div>
+            <label>Result</label>
+            <input id="unitResult" type="text" readonly />
+          </div>
+        </div>
+      </section>
+
+      <!-- PROGRAMMER -->
+      <section id="tab-prog" class="panel hidden">
+        <div class="grid">
+          <div>
+            <label>Input (detects base automatically)</label>
+            <input id="progInput" placeholder="e.g., 0xff, 1010b, 42, 0o77" />
+          </div>
+          <div>
+            <label>Binary</label>
+            <textarea id="progBin" rows="2" readonly></textarea>
+          </div>
+          <div>
+            <label>Octal</label>
+            <input id="progOct" readonly />
+          </div>
+          <div>
+            <label>Decimal</label>
+            <input id="progDec" readonly />
+          </div>
+          <div>
+            <label>Hex</label>
+            <input id="progHex" readonly />
+          </div>
+          <div class="inline">
+            <button class="tab-btn" id="bitNot">NOT</button>
+            <button class="tab-btn" id="bitClear">Clear</button>
+            <span class="tag">Bitwise: ~ only (offline)</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- FINANCE -->
+      <section id="tab-finance" class="panel hidden">
+        <div class="grid">
+          <div class="panel" style="background:#0b0f1a">
+            <div class="inline" style="justify-content:space-between; margin-bottom:8px"><strong>EMI Calculator</strong><span class="tag">Flat/Reducing</span></div>
+            <div class="grid">
+              <div><label>Principal (₹)</label><input id="emiP" type="number" value="500000"/></div>
+              <div><label>Annual Interest (%)</label><input id="emiR" type="number" value="10"/></div>
+              <div><label>Tenure (months)</label><input id="emiN" type="number" value="60"/></div>
+              <div><label>Result</label><input id="emiResult" readonly /></div>
+            </div>
+          </div>
+          <div class="panel" style="background:#0b0f1a">
+            <div class="inline" style="justify-content:space-between; margin-bottom:8px"><strong>GST / VAT</strong><span class="tag">Add/Remove</span></div>
+            <div class="grid">
+              <div><label>Amount</label><input id="gstAmt" type="number" value="1000"/></div>
+              <div><label>Rate (%)</label><input id="gstRate" type="number" value="18"/></div>
+              <div class="inline"><button class="tab-btn" id="gstAdd">Add GST</button><button class="tab-btn" id="gstRemove">Remove GST</button></div>
+              <div><label>Result</label><input id="gstResult" readonly /></div>
+            </div>
+          </div>
+          <div class="panel" style="background:#0b0f1a">
+            <div class="inline" style="justify-content:space-between; margin-bottom:8px"><strong>Tip / Discount</strong><span class="tag">Quick %</span></div>
+            <div class="grid">
+              <div><label>Bill</label><input id="tipBill" type="number" value="1000"/></div>
+              <div><label>Percent (%)</label><input id="tipPct" type="number" value="10"/></div>
+              <div class="inline"><button class="tab-btn" id="tipCalc">Tip</button><button class="tab-btn" id="discCalc">Discount</button></div>
+              <div><label>Total / Saved</label><input id="tipResult" readonly /></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DATE TOOLS -->
+      <section id="tab-date" class="panel hidden">
+        <div class="grid">
+          <div>
+            <div class="inline" style="justify-content:space-between"><strong>Date Difference</strong><span class="tag">dd/mm/yyyy</span></div>
+            <div class="grid">
+              <div><label>From</label><input id="dateFrom" type="date"/></div>
+              <div><label>To</label><input id="dateTo" type="date"/></div>
+              <div><label>Result</label><input id="dateDiff" readonly/></div>
+            </div>
+          </div>
+          <div>
+            <div class="inline" style="justify-content:space-between"><strong>Add/Subtract Days</strong><span class="tag">Work offline</span></div>
+            <div class="grid">
+              <div><label>Start Date</label><input id="offsetDate" type="date"/></div>
+              <div><label>Days (+/−)</label><input id="offsetDays" type="number" value="7"/></div>
+              <div><label>New Date</label><input id="offsetResult" readonly/></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- NOTES -->
+      <section id="tab-notes" class="panel hidden">
+        <div class="inline" style="justify-content:space-between"><strong>Scratchpad</strong><span class="tag">Auto‑save (local)</span></div>
+        <textarea id="notes" rows="8" placeholder="Write anything… calculations, reminders, values."></textarea>
+      </section>
+
+      <!-- HISTORY -->
+      <section id="tab-history" class="panel hidden">
+        <div class="inline" style="justify-content:space-between"><strong>Calculation History</strong><button id="historyClear" class="tab-btn danger">Clear</button></div>
+        <div id="historyList" style="margin-top:10px; display:grid; gap:8px"></div>
+      </section>
+    </main>
+
+    <footer>
+      <div>Keyboard: <span class="kbd">0‑9</span> <span class="kbd">+ − × ÷</span> <span class="kbd">( ) .</span> <span class="kbd">Enter</span> = equals, <span class="kbd">Backspace</span> = delete</div>
+      <div>100% offline • Single HTML file • Works on mobile/desktop</div>
+    </footer>
+  </div>
+
+  <script>
+    // ---------- Utilities ----------
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+    const history = JSON.parse(localStorage.getItem('aoi_history')||'[]');
+    const saveHistory = (expr, value) => {
+      history.unshift({ t: new Date().toISOString(), expr, value });
+      if (history.length > 100) history.pop();
+      localStorage.setItem('aoi_history', JSON.stringify(history));
+      renderHistory();
+    };
+
+    const formatNumber = (x) => {
+      if (x === Infinity || x === -Infinity) return '∞';
+      if (Number.isNaN(x)) return 'NaN';
+      const str = Math.abs(x) >= 1e10 || (Math.abs(x) > 0 && Math.abs(x) < 1e-6) ? x.toExponential(8) : x.toLocaleString(undefined, { maximumFractionDigits: 12 });
+      return str.replace(/\.?0+($|e)/, '$1');
+    };
+
+    const copyText = (text) => navigator.clipboard?.writeText(text).catch(()=>{});
+
+    // ---------- Tabs ----------
+    const switchTab = (key) => {
+      $$('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab === key));
+      $$('section[id^="tab-"]').forEach(p => p.classList.add('hidden'));
+      $(`#tab-${key}`).classList.remove('hidden');
+    };
+    $$('.tab-btn[data-tab]').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+
+    // ---------- Basic Calculator ----------
+    const basic = { expr: '', value: '0' };
+    const updateBasic = () => {
+      $('#basicExpr').textContent = basic.expr || '\u00A0';
+      $('#basicValue').textContent = basic.value;
+    };
+    const basicInput = (k) => {
+      if (k === 'AC') { basic.expr=''; basic.value='0'; updateBasic(); return; }
+      if (k === 'DEL') { basic.expr = basic.expr.slice(0, -1); tryEval(); return; }
+      if (k === '=') { tryEval(true); return; }
+      if (k === '%') { // percentage of last number
+        const m = basic.expr.match(/(\d*\.?\d+)(?!.*\d)/);
+        if (m) { basic.expr = basic.expr.replace(/(\d*\.?\d+)(?!.*\d)/, `(${m[1]}/100)`); tryEval(); return; }
+      }
+      basic.expr += k;
+      tryEval();
+    };
+
+    const tryEval = (final=false) => {
+      const safe = basic.expr.replace(/÷/g,'/').replace(/×/g,'*');
+      let val = 0;
+      try {
+        // guard: only numbers ops parentheses dot
+        if (/^[0-9+\-*/().%\s]*$/.test(safe)) {
+          // Percentage already converted to (/100)
+          val = Function(`return (${safe})`)();
+          if (typeof val === 'number' && !Number.isNaN(val)) {
+            basic.value = formatNumber(val);
+            if (final) saveHistory(basic.expr + ' =', basic.value);
+          }
+        }
+      } catch {}
+      updateBasic();
+    };
+
+    $$('#tab-basic .key').forEach(k => k.addEventListener('click', () => basicInput(k.dataset.k)));
+
+    // Keyboard support
+    window.addEventListener('keydown', (e) => {
+      const map = { 'Enter':'=', 'Backspace':'DEL', '/':'/', '*':'*', '+':'+', '-':'-', '.':'.', '%':'%', '(': '(', ')':')' };
+      if (document.getElementById('tab-basic').classList.contains('hidden')) return; // only for basic tab
+      if (/^[0-9]$/.test(e.key)) basicInput(e.key);
+      else if (map[e.key]) basicInput(map[e.key]);
+    });
+
+    // Copy result
+    document.getElementById('copyBtn').addEventListener('click', ()=>{
+      let val = '0';
+      if (!$('#tab-basic').classList.contains('hidden')) val = $('#basicValue').textContent;
+      else if (!$('#tab-sci').classList.contains('hidden')) val = $('#sciValue').textContent;
+      else if (!$('#tab-units').classList.contains('hidden')) val = $('#unitResult').value || '0';
+      else if (!$('#tab-prog').classList.contains('hidden')) val = $('#progDec').value || '0';
+      else if (!$('#tab-finance').classList.contains('hidden')) val = $('#emiResult').value || '0';
+      copyText(val);
+      const btn = document.getElementById('copyBtn');
+      const prev = btn.textContent; btn.textContent = 'Copied!'; setTimeout(()=>btn.textContent=prev,900);
+    });
+
+    // ---------- Scientific ----------
+    const sci = { expr: '', value: '0', mode: 'DEG' };
+    const updateSci = () => { $('#sciExpr').textContent = sci.expr || '\u00A0'; $('#sciValue').textContent = sci.value; $('#angleTag').textContent = sci.mode; };
+
+    const sciEval = (final=false) => {
+      let s = sci.expr;
+      if (!s) { sci.value = '0'; return updateSci(); }
+      // Replace constants and functions
+      s = s.replace(/pi/g, 'Math.PI').replace(/e(?=[^a-zA-Z0-9_])/g, 'Math.E');
+      s = s.replace(/sqrt\(/g, 'Math.sqrt(').replace(/abs\(/g, 'Math.abs(').replace(/log10\(/g, 'Math.log10(').replace(/ln\(/g, 'Math.log(');
+      // trig with DEG/RAD
+      const wrapTrig = (fn) => `((x)=>Math.${fn}(${sci.mode==='DEG' ? '(x*Math.PI/180)' : 'x'}))`;
+      s = s.replace(/sin\(/g, wrapTrig('sin')+'(')
+           .replace(/cos\(/g, wrapTrig('cos')+'(')
+           .replace(/tan\(/g, wrapTrig('tan')+'(');
+      // power ^
+      s = s.replace(/(\d+(?:\.\d+)?|\))\^(\d+(?:\.\d+)?|\()/g, 'Math.pow($1,$2)');
+      // factorial ! (only for small n)
+      s = s.replace(/(\d+)\!/g, '(()=>{let n=$1|0;if(n>170) return Infinity;let p=1;for(let i=2;i<=n;i++)p*=i;return p;})()');
+      try {
+        const val = Function(`return (${s})`)();
+        if (typeof val === 'number' && !Number.isNaN(val)) {
+          sci.value = formatNumber(val);
+          if (final) saveHistory(sci.expr + ' =', sci.value);
+        }
+      } catch { /* ignore */ }
+      updateSci();
+    };
+
+    const sciInput = (k) => {
+      if (k==='AC'){ sci.expr=''; sci.value='0'; return updateSci(); }
+      if (k==='DEL'){ sci.expr = sci.expr.slice(0,-1); return sciEval(); }
+      if (k==='='){ return sciEval(true); }
+      sci.expr += k; sciEval();
+    };
+
+    $$('#tab-sci .key').forEach(k => k.addEventListener('click', () => sciInput(k.dataset.k)));
+    $('#degBtn').addEventListener('click', ()=>{ sci.mode='DEG'; updateSci(); });
+    $('#radBtn').addEventListener('click', ()=>{ sci.mode='RAD'; updateSci(); });
+
+    // ---------- Units ----------
+    const units = {
+      length: {
+        m: 1, km: 1000, cm: 0.01, mm: 0.001, mi: 1609.344, yd: 0.9144, ft: 0.3048, in: 0.0254
+      },
+      weight: {
+        kg: 1, g: 0.001, mg: 0.000001, lb: 0.45359237, oz: 0.0283495231
+      },
+      temp: 'temp',
+      area: {
+        'm²':1, 'km²':1e6, 'cm²':1e-4, 'mm²':1e-6, 'ft²':0.09290304, 'in²':0.00064516, 'acre':4046.8564224
+      },
+      volume: {
+        'm³':1, 'L':0.001, 'mL':0.000001, 'ft³':0.0283168466, 'in³':0.000016387064, 'gal(US)':0.00378541178
+      },
+      speed: {
+        'm/s':1, 'km/h':0.277777778, 'mph':0.44704, 'kn':0.514444
+      }
+    };
+
+    const unitCategory = $('#unitCategory');
+    const unitFrom = $('#unitFrom');
+    const unitTo = $('#unitTo');
+    const unitInput = $('#unitInput');
+    const unitResult = $('#unitResult');
+
+    const buildUnitOptions = () => {
+      const cat = unitCategory.value;
+      unitFrom.innerHTML = '';
+      unitTo.innerHTML = '';
+      if (cat === 'temp') {
+        ['°C','°F','K'].forEach(u => { unitFrom.add(new Option(u,u)); unitTo.add(new Option(u,u)); });
+      } else {
+        Object.keys(units[cat]).forEach(k => { unitFrom.add(new Option(k,k)); unitTo.add(new Option(k,k)); });
+      }
+      unitFrom.selectedIndex = 0; unitTo.selectedIndex = 1;
+      convertUnits();
+    };
+
+    const convertUnits = () => {
+      const cat = unitCategory.value; const from = unitFrom.value; const to = unitTo.value; const val = parseFloat(unitInput.value || '0');
+      if (cat === 'temp') {
+        let c;
+        if (from==='°C') c = val; else if (from==='°F') c = (val-32)*5/9; else c = val - 273.15;
+        let res; if (to==='°C') res=c; else if (to==='°F') res=c*9/5+32; else res=c+273.15;
+        unitResult.value = formatNumber(res);
+      } else {
+        const table = units[cat];
+        const inMeters = val * table[from];
+        const out = inMeters / table[to];
+        unitResult.value = formatNumber(out);
+      }
+    };
+
+    unitCategory.addEventListener('change', buildUnitOptions);
+    unitFrom.addEventListener('change', convertUnits);
+    unitTo.addEventListener('change', convertUnits);
+    unitInput.addEventListener('input', convertUnits);
+    buildUnitOptions();
+
+    // ---------- Programmer ----------
+    const parseAutoBase = (s) => {
+      s = s.trim().toLowerCase();
+      let n;
+      if (s.startsWith('0x')) n = parseInt(s.slice(2), 16);
+      else if (s.endsWith('b')) n = parseInt(s.slice(0,-1), 2);
+      else if (s.startsWith('0o')) n = parseInt(s.slice(2), 8);
+      else n = parseInt(s, 10);
+      return Number.isNaN(n) ? null : n >>> 0; // unsigned 32-bit
+    };
+
+    const progInput = $('#progInput');
+    const progBin = $('#progBin');
+    const progOct = $('#progOct');
+    const progDec = $('#progDec');
+    const progHex = $('#progHex');
+
+    const renderProg = (n) => {
+      if (n===null) { progBin.value=progOct.value=progDec.value=progHex.value=''; return; }
+      progBin.value = n.toString(2).padStart(8,'0').replace(/(.{4})/g,'$1 ').trim();
+      progOct.value = n.toString(8);
+      progDec.value = n.toString(10);
+      progHex.value = '0x' + n.toString(16).toUpperCase();
+    };
+    progInput.addEventListener('input', ()=>renderProg(parseAutoBase(progInput.value)));
+    $('#bitNot').addEventListener('click', ()=>{
+      const n = parseAutoBase(progInput.value); if (n===null) return; const m = (~n)>>>0; progInput.value = '0x'+m.toString(16); renderProg(m);
+    });
+    $('#bitClear').addEventListener('click', ()=>{ progInput.value=''; renderProg(null); });
+
+    // ---------- Finance ----------
+    const emi = () => {
+      const P = parseFloat($('#emiP').value||0); const annual = parseFloat($('#emiR').value||0)/100; const N = parseInt($('#emiN').value||0,10);
+      const r = annual/12; if (!r || !N) { $('#emiResult').value='0'; return; }
+      const E = P * r * Math.pow(1+r, N) / (Math.pow(1+r,N)-1);
+      const total = E*N; const interest = total - P;
+      $('#emiResult').value = `EMI: ₹${formatNumber(E)} | Interest: ₹${formatNumber(interest)} | Total: ₹${formatNumber(total)}`;
+    };
+    ['emiP','emiR','emiN'].forEach(id => $('#'+id).addEventListener('input', emi)); emi();
+
+    $('#gstAdd').addEventListener('click', ()=>{
+      const amt = parseFloat($('#gstAmt').value||0); const r = parseFloat($('#gstRate').value||0)/100; const res = amt*(1+r);
+      $('#gstResult').value = `With GST: ${formatNumber(res)}`;
+    });
+    $('#gstRemove').addEventListener('click', ()=>{
+      const amt = parseFloat($('#gstAmt').value||0); const r = parseFloat($('#gstRate').value||0)/100; const res = amt/(1+r);
+      $('#gstResult').value = `Before GST: ${formatNumber(res)}`;
+    });
+
+    $('#tipCalc').addEventListener('click', ()=>{
+      const bill = parseFloat($('#tipBill').value||0); const p = parseFloat($('#tipPct').value||0)/100; const tip = bill*p; const total=bill+tip;
+      $('#tipResult').value = `Tip: ${formatNumber(tip)} | Total: ${formatNumber(total)}`;
+    });
+    $('#discCalc').addEventListener('click', ()=>{
+      const bill = parseFloat($('#tipBill').value||0); const p = parseFloat($('#tipPct').value||0)/100; const save = bill*p; const total=bill-save;
+      $('#tipResult').value = `Saved: ${formatNumber(save)} | Pay: ${formatNumber(total)}`;
+    });
+
+    // ---------- Dates ----------
+    const todayISO = () => new Date().toISOString().slice(0,10);
+    $('#dateFrom').value = todayISO(); $('#dateTo').value = todayISO();
+    const diffDates = () => {
+      const from = new Date($('#dateFrom').value); const to = new Date($('#dateTo').value);
+      const ms = to - from; const days = Math.round(ms/86400000);
+      $('#dateDiff').value = `${days} day(s)`;
+    };
+    ['dateFrom','dateTo'].forEach(id => $('#'+id).addEventListener('change', diffDates)); diffDates();
+
+    $('#offsetDate').value = todayISO();
+    const offsetCalc = () => {
+      const d = new Date($('#offsetDate').value); const n = parseInt($('#offsetDays').value||0,10); d.setDate(d.getDate()+n);
+      $('#offsetResult').value = d.toISOString().slice(0,10);
+    };
+    ['offsetDate','offsetDays'].forEach(id => $('#'+id).addEventListener('input', offsetCalc)); offsetCalc();
+
+    // ---------- Notes (local save) ----------
+    const notesEl = $('#notes');
+    notesEl.value = localStorage.getItem('aoi_notes') || '';
+    notesEl.addEventListener('input', ()=>localStorage.setItem('aoi_notes', notesEl.value));
+
+    // ---------- History ----------
+    const renderHistory = () => {
+      const box = $('#historyList'); box.innerHTML = '';
+      history.forEach(h => {
+        const row = document.createElement('div');
+        row.style.padding = '10px'; row.style.border = '1px solid rgba(255,255,255,.06)'; row.style.borderRadius = '12px'; row.style.background = '#0a0f1c';
+        row.innerHTML = `<div style="color:var(--muted); font-size:12px">${new Date(h.t).toLocaleString()}</div><div style="font-weight:700">${h.expr}</div><div style="font-size:18px">${h.value}</div>`;
+        box.appendChild(row);
+      });
+    };
+    renderHistory();
+    $('#historyClear').addEventListener('click', ()=>{ localStorage.removeItem('aoi_history'); location.reload(); });
+
+    // ---------- Scientific keypad Enter key ----------
+    window.addEventListener('keydown', (e)=>{
+      if (!$('#tab-sci').classList.contains('hidden')) {
+        if (/^[0-9.]$/.test(e.key)) { sciInput(e.key); }
+        else if (e.key==='Enter') sciInput('=');
+        else if (e.key==='Backspace') sciInput('DEL');
+        else if (['+','-','*','/','(',')','^',','].includes(e.key)) sciInput(e.key);
+      }
+    });
+
+    // Default to Basic on load
+    switchTab('basic');
+  </script>
+</body>
+</html>
